@@ -12,12 +12,9 @@ library("tidyverse")
 library("patchwork")
 library("readxl")
 library("png") 
+library("ggpubr")
 
 setwd( "C:/Users/Joe/Documents/richmond_dukes_baseball/")
-
-dukes_logo <- readPNG("resources/dukes_logo.png", native = TRUE)
-
-dukes_red <- "#CC0000"
 
 ####################################
 # Baseball acronyms
@@ -130,13 +127,37 @@ read_single_a <- function(category, num_lines) {
 
 single_a_fielding <- read_single_a("fielding", 1066)
 
-single_a_hitting <- read_single_a("hitting", 1198)
+single_a_hitting <- read_single_a("hitting", 1198) %>%
+  mutate(xbh = x2b + x3b + hr,
+         club = ifelse(team == "RIU", "Dukes", "Opponents"))
 
-single_a_pitching <- read_single_a("pitching", 410)
+single_a_pitching <- read_single_a("pitching", 410) %>%
+  mutate(strike_out_rate = so/9,
+         whip = (bb+h) / ip)
+
+single_a_hitting_filtered <- single_a_hitting %>%
+  # 20 "at bats" needed for stats
+  filter(ab >= 20)
+
+single_a_pitching_filtered <- single_a_pitching %>%
+  filter(ip >= 13)
 
 #############################################################
 # Plot graphs
 #############################################################
+
+dukes_logo <- readPNG("resources/dukes_logo.png", native = TRUE)
+
+dukes_red <- "#CC0000"
+
+opponent_grey <- "#CCCCCC"
+
+alvin_plot_theme <- theme(panel.grid = element_blank(),
+                          axis.title = element_text(size = 12, face="bold"),
+                          plot.title = element_text(size = 16, face="bold"),
+                          axis.text = element_text(face="bold", size = 11,
+                                                   colour = "black"))
+
 ####################################
 # "Improving" Plot
 ####################################
@@ -172,9 +193,11 @@ improving_plot <- ggplot(totals_both_years, aes(x = year, y = value)) +
   geom_col(aes(fill = year), colour = "black") +
   facet_wrap(~category) +
   theme_bw() +
-  theme(legend.position = "none",
-        panel.grid = element_blank()) +
-  labs(y = "", x = "", title = "Go Dukes!")
+  alvin_plot_theme +
+  theme(legend.position = "none",   strip.text = element_text(face = "bold",
+                                                              size = 12)) +
+  labs(y = "", x = "", title = "Dukes Hitting Improvement",
+       subtitle = "For players with minimum 20 plate appearances")
 
 improving_plot_logo <- improving_plot +
   patchwork::inset_element(p = dukes_logo,
@@ -212,16 +235,17 @@ avg_vs_slg <- ggplot(hitters_2022 %>%
   filter(pa > 20), aes(x = `Batting average`, y = `Slugging`)) +
   geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
   theme_bw() +
-  theme(panel.grid = element_blank(),
-        axis.title = element_text(size = 12),
-        plot.title = element_text(size = 16)) +
-  labs(title = "Dukes Batting versus Slugging") +
+  alvin_plot_theme +
+  labs(title = "Dukes’ Batting Average and Slugging percentages",
+       subtitle = "For players with minimum 20 plate appearances") +
   # League average
   geom_point(shape = 3, size = 5,
-             colour = "#000000", aes(x = 0.422, y = 0.537)) +
+             colour = "#000000", aes(x = 0.422, y = 0.537),
+             stroke = 2) +
   ylim(0, 1) +
   xlim(0, 0.6) +
-  annotate("text", x = 0.52, y = 0.54, label = "League average")
+  annotate("text", x = 0.52, y = 0.54, label = "League average",
+           fontface = "bold")
 
 avg_vs_slg_logo <- avg_vs_slg +
   patchwork::inset_element(p = dukes_logo,
@@ -244,7 +268,167 @@ ggsave(plot = avg_vs_slg_logo,
        height = 18)
 
 ####################################
-# Other plots - to finish
+# Combined plot - Batting
+####################################
+
+# — On-Base Percentage (OBP) vs Strike outs (K) (for individual players & include the league ave).
+
+obp_vs_so <- ggplot(hitters_2022 %>%
+                      rename(`On base percentage` = obp,
+                             `Strike outs` = so) %>%
+         filter(pa > 20), aes(x = `On base percentage`, y = `Strike outs`)) +
+  geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.title = element_text(size = 12),
+        plot.title = element_text(size = 16)) +
+  xlim(0, 1) +
+  labs(title = "On base percentage versus strike-outs") +
+  # League average
+  geom_point(shape = 3, size = 5,
+             colour = "#000000", aes(x = median(single_a_hitting_filtered$obp), 
+                                     y = median(single_a_hitting_filtered$so)))
+
+# — Stolen bases (SB) (for individual players & include the league ave).
+
+sb_plot <- ggplot(hitters_2022 %>%
+                    rename(`Stolen bases` = sb) %>%
+                    filter(pa > 20), aes(x = reorder(player, `Stolen bases`),
+                                         y = `Stolen bases`)) +
+  geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.title = element_text(size = 12),
+        plot.title = element_text(size = 16),
+        axis.text.x = element_text(angle = 90)) +
+  labs(x = "", title = "Stolen Bases") +
+  ylim(0, 40) +
+  geom_hline(yintercept = median(single_a_hitting_filtered$sb),
+             linetype = "dashed")
+
+# — Extra-base hits (XBH) (for individual players & include the league ave).
+
+xbh_plot <- ggplot(hitters_2022 %>%
+                    rename(`Extra base hits` = xbh) %>%
+                    filter(pa > 20), aes(x = reorder(player, `Extra base hits`),
+                                         y = `Extra base hits`)) +
+  geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.title = element_text(size = 12),
+        plot.title = element_text(size = 16),
+        axis.text.x = element_text(angle = 90)) +
+  labs(x = "", title = "Extra base hits") +
+  geom_hline(yintercept = median(single_a_hitting_filtered$xbh),
+             linetype = "dashed")
+
+hitting_combo_plot <- ggpubr::ggarrange(sb_plot, xbh_plot, obp_vs_so,
+                                   ncol = 2, nrow = 2)
+
+####################################
+# Combined plot - Pitching
+####################################
+
+# — Pitching: Strike out rate (K/9) for individual players vs league average.
+
+k9_plot <- ggplot(pitchers_2022 %>%
+         rename(`Strike out rate` = k_9) %>%
+         # Players need at least 13 innings pitched
+         filter(ip > 13), aes(x = reorder(player, `Strike out rate`),
+                              y = `Strike out rate`)) +
+  geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.title = element_text(size = 12),
+        plot.title = element_text(size = 16),
+        axis.text.x = element_text(angle = 90)) +
+  labs(x = "", title = "Pitchers: strike out rate") +
+  ylim(0, 20) +
+  geom_hline(yintercept = median(single_a_pitching_filtered$strike_out_rate),
+             linetype = "dashed")
+
+# — Pitching: number of Strike outs (K) for individual players vs league average.
+
+so_plot <- ggplot(pitchers_2022 %>%
+                    rename(`Strike outs` = so) %>%
+                    # Players need at least 13 innings pitched
+                    filter(ip > 13), aes(x = reorder(player, `Strike outs`),
+                                         y = `Strike outs`)) +
+  geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.title = element_text(size = 12),
+        plot.title = element_text(size = 16),
+        axis.text.x = element_text(angle = 90)) +
+  labs(x = "", title = "Pitchers: strike outs") +
+  ylim(0, 100) +
+  geom_hline(yintercept = median(single_a_pitching_filtered$so),
+             linetype = "dashed")
+
+# — Pitching: Walks + Hits per Inning Pitched (WHIP) for individual players vs 
+# league average.
+
+whip_plot <- ggplot(pitchers_2022 %>%
+                    rename(WHIP = whip) %>%
+                    # Players need at least 13 innings pitched
+                    filter(ip > 13), aes(x = reorder(player, WHIP),
+                                         y = WHIP)) +
+  geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.title = element_text(size = 12),
+        plot.title = element_text(size = 16),
+        axis.text.x = element_text(angle = 90)) +
+  labs(x = "", title = "Pitchers: Walks and Hits per Inning Pitched (WHIP)") +
+  ylim(0, 5) +
+  geom_hline(yintercept = median(single_a_pitching_filtered$whip),
+             linetype = "dashed")
+
+pitching_plot <- ggpubr::ggarrange(so_plot, k9_plot, whip_plot, 
+                                   ncol = 2, nrow = 2)
+
+####################################
+# Plotting with the whole single A dataset
+####################################
+
+# RIU is the Richmond Dukes
+single_a_hitting_plot <- single_a_hitting %>%
+  filter(ab >= 20) %>%
+  ggplot(aes(x = avg, y = slg)) +
+  geom_point(colour = opponent_grey, alpha = 0.8, size = 3) +
+  xlim(0, 1) +
+  theme_bw() +
+  labs(x = "Batting average", y = "Slugging percentage",
+       title = "Batting versus slugging in single A baseball: 2022 season") +
+  theme(panel.grid = element_blank(),
+        legend.title = element_blank()) +
+  geom_point(data = single_a_hitting %>%
+               filter(ab >= 20 & team == "RIU"),
+             colour = dukes_red, alpha = 1, size = 4)
+
+single_a_hitting_plot_logo <- single_a_hitting_plot +
+  patchwork::inset_element(p = dukes_logo,
+                           left = 0.95,
+                           right = 0.75,
+                           bottom = 0.02,
+                           top = 0.22,
+                           # Make sure logo isn't clipped
+                           clip = FALSE)
+
+ggsave(plot = single_a_hitting_plot_logo, 
+       filename = paste0("single_a_hitting_plot_logo",
+                         format(Sys.time(), "%Y%m%d_%H%M%S"),
+                         ".jpeg"),
+       path = "plots/", 
+       device='jpeg', 
+       dpi=600,
+       units = "cm",
+       width = 15,
+       height = 18)
+
+
+####################################
+# Extra plots
 ####################################
 
 dukes_results %>%
