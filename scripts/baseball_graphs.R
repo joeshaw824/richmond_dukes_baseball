@@ -258,14 +258,14 @@ save_dukes_plot(improving_plot_logo, "Dukes_offensive_improvement")
 # (for individual players & include the league ave).
 
 avg_vs_slg <- ggplot(hitters_2022 %>%
-         rename(`Batting average` = avg,
-                `Slugging` = slg) %>%
+         rename(`Batting Average` = avg,
+                `Slugging Percentage` = slg) %>%
   filter(pa >= hitting_pa_threshold), 
-  aes(x = `Batting average`, y = `Slugging`)) +
+  aes(x = `Batting Average`, y = `Slugging Percentage`)) +
   geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
     theme_bw() +
     alvin_plot_theme +
-    labs(title = "Dukes’ Batting Average and Slugging",
+    labs(title = "Dukes’ Batting Average and Slugging Percentage",
          subtitle = hitting_subtitle) +
     # League average
     geom_point(shape = 3, size = 5,
@@ -292,16 +292,16 @@ save_dukes_plot(avg_vs_slg_logo, "Batting average vs slugging")
 # include the league ave).
 
 obp_vs_so <- ggplot(hitters_2022 %>%
-                      rename(`On base percentage` = obp,
-                             `Strike outs` = so) %>%
+                      rename(`On-base Percentage` = obp,
+                             `Strikeouts` = so) %>%
          filter(pa >= hitting_pa_threshold), 
-         aes(x = `Strike outs`, y = `On base percentage`)) +
+         aes(x = `Strikeouts`, y = `On-base Percentage`)) +
   geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
   theme_bw() +
   alvin_plot_theme +
   ylim(0, 1) +
   xlim(0, 15) +
-  labs(title = "On base percentage versus strike-outs",
+  labs(title = "On-base Percentage versus Strikeouts",
        subtitle = hitting_subtitle) +
   # League average
   geom_point(shape = 3, size = 5,
@@ -325,16 +325,16 @@ save_dukes_plot(obp_vs_so_logo, "OBP versus Strike outs")
 
 # Flip the axes (requested by Alvin)
 so_vs_obp <- ggplot(hitters_2022 %>%
-                      rename(`On base percentage` = obp,
-                             `Strike outs` = so) %>%
+                      rename(`On-base percentage` = obp,
+                             `Strikeouts` = so) %>%
                       filter(pa >= hitting_pa_threshold), 
-                    aes(x = `On base percentage`, y = `Strike outs`)) +
+                    aes(x = `On-base percentage`, y = `Strikeouts`)) +
   geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
   theme_bw() +
   alvin_plot_theme +
   xlim(0, 1) +
   ylim(0, 15) +
-  labs(title = "Strike-outs versus On Base Percentage",
+  labs(title = "Strikeouts versus On-base Percentage",
        subtitle = hitting_subtitle) +
   # League average
   geom_point(shape = 3, size = 5,
@@ -358,10 +358,10 @@ save_dukes_plot(so_vs_obp_logo, "Strike outs versus OBP")
 # — Stolen bases (SB) (for individual players & include the league ave).
 
 sb_plot <- ggplot(hitters_2022 %>%
-                    rename(`Stolen bases` = sb) %>%
+                    rename(`Stolen Bases` = sb) %>%
                     filter(pa >= hitting_pa_threshold), 
-                  aes(x = reorder(player, `Stolen bases`),
-                                         y = `Stolen bases`)) +
+                  aes(x = reorder(player, `Stolen Bases`),
+                                         y = `Stolen Bases`)) +
   geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
   theme_bw() +
   alvin_plot_theme +
@@ -387,15 +387,15 @@ save_dukes_plot(sb_plot_logo, "Stolen bases")
 # — Extra-base hits (XBH) (for individual players & include the league ave).
 
 xbh_plot <- ggplot(hitters_2022 %>%
-                    rename(`Extra base hits` = xbh) %>%
+                    rename(`Extra Base Hits` = xbh) %>%
                     filter(pa >= hitting_pa_threshold), 
-                   aes(x = reorder(player, `Extra base hits`),
-                                         y = `Extra base hits`)) +
+                   aes(x = reorder(player, `Extra Base Hits`),
+                                         y = `Extra Base Hits`)) +
   geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
   theme_bw() +
   alvin_plot_theme +
   theme(axis.text.x = element_text(angle = 90)) +
-  labs(x = "", title = "Extra base hits",
+  labs(x = "", title = "Extra Base Hits",
        subtitle = hitting_subtitle) +
   geom_hline(yintercept = median(single_a_hitting_filtered$xbh),
              linetype = "dashed") +
@@ -415,16 +415,16 @@ save_dukes_plot(xbh_plot_logo, "Extra base hits")
 # — Pitching: Strike out rate (K/9) for individual players vs league average.
 
 k9_plot <- ggplot(pitchers_2022 %>%
-         rename(`Strike out rate` = k_9) %>%
+         rename(`Strikeout Rate` = k_9) %>%
          # Players need at least 13 innings pitched
          filter(ip > pitching_ip_threshold), 
-         aes(x = reorder(player, `Strike out rate`),
-                              y = `Strike out rate`)) +
+         aes(x = reorder(player, `Strikeout Rate`),
+                              y = `Strikeout Rate`)) +
   geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
   theme_bw() +
   alvin_plot_theme +
   theme(axis.text.x = element_text(angle = 90)) +
-  labs(x = "", title = "Pitchers: strike out rate (K/9)",
+  labs(x = "", title = "Pitching: Strikeout Rate (K/9)",
        subtitle = pitching_subtitle) +
   ylim(0, 20) +
   geom_hline(yintercept = median(single_a_pitching_filtered$strike_out_rate),
@@ -445,16 +445,16 @@ save_dukes_plot(k9_plot_logo, "Strike out rate")
 # — Pitching: number of Strike outs (K) for individual players vs league average.
 
 so_plot <- ggplot(pitchers_2022 %>%
-                    rename(`Strike outs` = so) %>%
+                    rename(`Strikeouts` = so) %>%
                     # Players need at least 13 innings pitched
                     filter(ip > pitching_ip_threshold), 
-                  aes(x = reorder(player, `Strike outs`),
-                                         y = `Strike outs`)) +
+                  aes(x = reorder(player, `Strikeouts`),
+                                         y = `Strikeouts`)) +
   geom_point(size = 4, colour = dukes_red, alpha= 0.8) +
   theme_bw() +
   alvin_plot_theme +
   theme(axis.text.x = element_text(angle = 90)) +
-  labs(x = "", title = "Pitchers: strike outs",
+  labs(x = "", title = "Pitchers: Strikeouts",
        subtitle = pitching_subtitle) +
   ylim(0, 100) +
   geom_hline(yintercept = median(single_a_pitching_filtered$so),
@@ -510,18 +510,18 @@ save_dukes_plot(whip_plot_logo, "WHIP")
 
 walk_off_data1 <- data.frame(games = c(1,1,1),
                             class = c("Total Single A games",
-                                 "Walk-off wins",
+                                 "Total Single A walk-off wins",
                                  "Dukes walk-off wins"),
                        values = c(337, 37, 3)) %>%
   mutate(class = factor(class, levels  = c("Total Single A games",
-                        "Walk-off wins",
+                        "Total Single A walk-off wins",
                         "Dukes walk-off wins")))
 
 walk_off_plot1 <- ggplot(walk_off_data1, aes(x = class, y = values, fill = class)) +
   geom_col(colour = "black") +
   scale_fill_manual(values = c("#FF999999", "#FF6666", dukes_red)) +
   labs(y = "Games", x = "",
-       title = "BBF Single A games",
+       title = "BBF Single A walk-off wins",
        caption = "Data from 2022 regular season") +
   theme_bw() +
   alvin_plot_theme +
@@ -572,8 +572,8 @@ single_a_hitting_plot <- single_a_hitting %>%
   scale_alpha_manual(values = c(1,0.5), guide = "none") +
   geom_point(shape = 21, aes(fill = club, alpha = club), size = 3,
              colour = "black") +
-  labs(x = "Batting average", y = "Slugging percentage",
-       title = "Batting average versus slugging in BBF Single A",
+  labs(x = "Batting Average", y = "Slugging Percentage",
+       title = "Batting Average and Slugging Percentage\nin BBF Single A",
        subtitle = hitting_subtitle,
        caption = "Data from 2022 regular season") +
   theme(panel.grid = element_blank(),
